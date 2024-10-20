@@ -4,7 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 
 using Sisa.Security.Helpers;
 
-namespace Sisa.Security;
+namespace Sisa.Security.Handlers;
 
 public static class CommandHandler
 {

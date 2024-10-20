@@ -1,6 +1,6 @@
 ﻿using System.CommandLine;
 
-using Sisa.Security;
+using Sisa.Security.Handlers;
 
 await CommandHandler.Initialize()
     .InvokeAsync(args);
