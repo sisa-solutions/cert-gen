@@ -1,0 +1,182 @@
+name: Release
+on:
+  workflow_dispatch:
+
+jobs:
+  preparing:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      ref: release/v${{ steps.versioning.outputs.SimpleVersion }}
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+      - name: Configure Git user for CI
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+      - name: Setup Nerdbank.GitVersioning
+        uses: dotnet/nbgv@master
+        id: versioning
+        with:
+          path: src/CertGen
+
+      - name: Prepare Release
+        shell: bash
+        run: nbgv prepare-release
+        working-directory: src/CertGen
+  
+      - name: Push Release Branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          git push origin ${{ github.ref }}
+          git checkout release/v${{ steps.versioning.outputs.SimpleVersion }}
+          git push --set-upstream origin release/v${{ steps.versioning.outputs.SimpleVersion }}
+  
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            runtime: linux-x64
+          - os: ubuntu-22.04
+            runtime: linux-arm64
+          - os: macos-14
+            runtime: osx-x64
+          - os: macos-14
+            runtime: osx-arm64
+          - os: windows-2022
+            runtime: win-x64
+          - os: windows-2022
+            runtime: win-arm64
+    runs-on: ${{ matrix.os }}
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+      ARTIFACTS_DIR: ''
+    outputs:
+      SimpleVersion: ${{ steps.versioning.outputs.SimpleVersion }}
+    needs:
+      - preparing
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.preparing.outputs.ref }}
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          config-file: nuget.config
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Setup Nerdbank.GitVersioning
+        uses: dotnet/nbgv@master
+        id: versioning
+        with:
+          path: src/CertGen
+
+      - name: Install Dependencies
+        shell: bash
+        run: dotnet restore src --locked-mode
+
+      - name: Build
+        shell: bash
+        run: |
+          dotnet build src/CertGen \
+            --configuration Release \
+            --runtime ${{ matrix.runtime }} \
+            --no-restore \
+            -p:PublicRelease=true \
+            -p:Version=${{ steps.versioning.outputs.CloudBuildNumber }} \
+            -p:AssemblyVersion=${{ steps.versioning.outputs.AssemblyVersion }} \
+            -p:FileVersion=${{ steps.versioning.outputs.AssemblyFileVersion }} \
+            -p:AssemblyInformationalVersion=${{ steps.versioning.outputs.AssemblyInformationalVersion }}
+
+      # See: https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/cross-compile#linux
+      - name: Install Packages for linux-arm64
+        if: ${{ matrix.runtime == 'linux-arm64' }}
+        shell: bash
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo bash -c 'cat > /etc/apt/sources.list.d/arm64.list <<EOF
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
+          EOF'
+          sudo sed -i -e 's/deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
+          sudo sed -i -e 's/deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
+          sudo apt update
+          sudo apt install -y clang llvm binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu zlib1g-dev:arm64
+
+      - name: Publish Artifact
+        id: publish
+        shell: bash
+        run: |
+          ARTIFACTS_DIR=cert-gent_v${{ steps.versioning.outputs.SimpleVersion }}_${{ matrix.runtime }}
+          echo "ARTIFACTS_DIR=$ARTIFACTS_DIR" >> $GITHUB_ENV
+          dotnet publish src/CertGen --configuration Release --runtime ${{ matrix.runtime }} --no-restore --no-build --output $ARTIFACTS_DIR
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARTIFACTS_DIR }}
+          path: ${{ env.ARTIFACTS_DIR }}
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 90
+
+  release:
+    runs-on: ubuntu-22.04
+    needs:
+      - build
+    permissions:
+      contents: write
+    steps:
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release create v${{ needs.build.outputs.SimpleVersion }} \
+            --title v${{ needs.build.outputs.SimpleVersion }} \
+            --target ${{ github.sha }} \
+            --latest=true \
+            --repo ${{ github.repository }} \
+            --generate-notes
+
+      - name: Download Release Artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
+          pattern: cert-gent_v${{ needs.build.outputs.SimpleVersion }}_*
+
+      - name: Zip Release Artifact
+        shell: bash
+        run: |
+          mkdir artifacts
+          cd downloaded
+          for artifact in */; do
+            artifact_dir=$(basename "$artifact")
+            tar -czvf "../artifacts/${artifact%/}.tar.gz" -C "${artifact_dir}" .
+          done
+
+      - name: Publish Release Artifact to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release upload v${{ needs.build.outputs.SimpleVersion }} artifacts/* \
+            --clobber \
+            --repo ${{ github.repository }}
