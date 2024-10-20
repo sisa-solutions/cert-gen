@@ -120,7 +120,7 @@ public static class CommandHandler
 
         var createEcdsaSubCommand = new Command(
             name: "ecdsa",
-            description: "Generate ECDSA key pair"
+            description: "Generate Certificate with ECDSA key pair"
         ) {
             ecdsaCurveOption
         };
@@ -157,7 +157,7 @@ public static class CommandHandler
 
         var createRsaSubCommand = new Command(
             name: "rsa",
-            description: "Generate RSA key pair"
+            description: "Generate Certificate with RSA key pair"
         ) {
             rsaKeySizeOption,
         };
