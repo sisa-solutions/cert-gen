@@ -9,7 +9,7 @@
     <Title>CertGen</Title>
     <Product>CertGen</Product>
     <Description>Generates a self-signed certificate for development purposes.</Description>
-    <Copyright>Copyright © 2024, Sisa Solutions</Copyright>
+    <Copyright>Copyright (c) 2024 Sisa Solutions</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
