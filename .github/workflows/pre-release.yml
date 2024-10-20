@@ -24,7 +24,7 @@ jobs:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       ARTIFACTS_DIR: ''
     outputs:
-      SemVer2: ${{ steps.versioning.outputs.SemVer2 }}
+      Version: ${{ steps.versioning.outputs.CloudBuildNumber }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -107,8 +107,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          gh release create v${{ needs.build.outputs.SemVer2 }} \
-            --title v${{ needs.build.outputs.SemVer2 }} \
+          gh release create v${{ needs.build.outputs.Version }} \
+            --title v${{ needs.build.outputs.Version }} \
             --target ${{ github.sha }} \
             --latest=false \
             --prerelease \
@@ -119,7 +119,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded
-          pattern: cert-gent_v${{ needs.build.outputs.SemVer2 }}_*
+          pattern: cert-gent_v${{ needs.build.outputs.Version }}_*
 
       - name: Zip Release Artifact
         shell: bash
@@ -136,6 +136,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          gh release upload v${{ needs.build.outputs.SemVer2 }} artifacts/* \
+          gh release upload v${{ needs.build.outputs.Version }} artifacts/* \
             --clobber \
             --repo ${{ github.repository }}
