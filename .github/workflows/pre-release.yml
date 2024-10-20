@@ -13,11 +13,14 @@ on:
     paths:
       - '**.cs'
       - '**.csproj'
+    types:
+      - closed
 
   workflow_dispatch:
 
 jobs:
   build:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     strategy:
       matrix:
         include:
