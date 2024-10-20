@@ -119,7 +119,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded
-          pattern: cert-gent_v${{ needs.build.outputs.Version }}_*
+          pattern: cert-gent_v${{ needs.build.outputs.Version }}
 
       - name: Zip Release Artifact
         shell: bash
