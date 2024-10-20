@@ -99,7 +99,7 @@ jobs:
         id: publish
         shell: bash
         run: |
-          ARTIFACTS_DIR=cert-gent_v${{ steps.versioning.outputs.CloudBuildNumber }}_${{ matrix.runtime }}
+          ARTIFACTS_DIR=cert-gen_v${{ steps.versioning.outputs.CloudBuildNumber }}_${{ matrix.runtime }}
           echo "ARTIFACTS_DIR=$ARTIFACTS_DIR" >> $GITHUB_ENV
           dotnet publish src/CertGen --configuration Release --runtime ${{ matrix.runtime }} --no-restore --no-build --output $ARTIFACTS_DIR
 
@@ -136,7 +136,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded
-          pattern: cert-gent_v${{ needs.build.outputs.Version }}_*
+          pattern: cert-gen_v${{ needs.build.outputs.Version }}_*
 
       - name: Zip Release Artifact
         shell: bash
