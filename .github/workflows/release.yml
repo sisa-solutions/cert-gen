@@ -63,7 +63,7 @@ jobs:
       NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
       ARTIFACTS_DIR: ''
     outputs:
-      SimpleVersion: ${{ steps.versioning.outputs.SimpleVersion }}
+      Version: ${{ steps.versioning.outputs.SimpleVersion }}
     needs:
       - preparing
     steps:
@@ -149,8 +149,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          gh release create v${{ needs.build.outputs.SimpleVersion }} \
-            --title v${{ needs.build.outputs.SimpleVersion }} \
+          gh release create v${{ needs.build.outputs.Version }} \
+            --title v${{ needs.build.outputs.Version }} \
             --target ${{ github.sha }} \
             --latest=true \
             --repo ${{ github.repository }} \
@@ -160,7 +160,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: downloaded
-          pattern: cert-gent_v${{ needs.build.outputs.SimpleVersion }}_*
+          pattern: cert-gent_v${{ needs.build.outputs.Version }}_*
 
       - name: Zip Release Artifact
         shell: bash
@@ -177,6 +177,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          gh release upload v${{ needs.build.outputs.SimpleVersion }} artifacts/* \
+          gh release upload v${{ needs.build.outputs.Version }} artifacts/* \
             --clobber \
             --repo ${{ github.repository }}
