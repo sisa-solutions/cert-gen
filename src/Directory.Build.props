@@ -9,5 +9,9 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+    <Authors>Sang Au</Authors>
+    <Company>Sisa Solutions</Company>
+    <RepositoryUrl>https://github.com/sisa-solutions/cert-gen</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 </Project>
