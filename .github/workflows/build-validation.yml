@@ -1,0 +1,82 @@
+name: Build Validation
+on:
+  push:
+    branches:
+      - feature/*
+      - bugfix/*
+    paths:
+      - '**.cs'
+      - '**.csproj'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.cs'
+      - '**.csproj'
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            runtime: linux-x64
+          - os: ubuntu-22.04
+            runtime: linux-arm64
+          - os: macos-14
+            runtime: osx-x64
+          - os: macos-14
+            runtime: osx-arm64
+          - os: windows-2022
+            runtime: win-x64
+          - os: windows-2022
+            runtime: win-arm64
+    runs-on: ${{ matrix.os }}
+    env:
+      NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          config-file: ./nuget.config
+          cache-dependency-path: '**/packages.lock.json'
+
+      - name: Install Dependencies
+        shell: bash
+        run: dotnet restore src --locked-mode
+
+      - name: Build
+        shell: bash
+        run: dotnet build src/CertGen --configuration Release --runtime ${{ matrix.runtime }} --no-restore
+      
+      # See: https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/cross-compile#linux
+      - name: Install Packages for linux-arm64
+        if: ${{ matrix.runtime == 'linux-arm64' }}
+        shell: bash
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo bash -c 'cat > /etc/apt/sources.list.d/arm64.list <<EOF
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
+          deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
+          EOF'
+          sudo sed -i -e 's/deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
+          sudo sed -i -e 's/deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
+          sudo apt update
+          sudo apt install -y clang llvm binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu zlib1g-dev:arm64
+
+      - name: Publish Artifact
+        id: publish
+        shell: bash
+        run: |
+          dotnet publish src/CertGen --configuration Release --runtime ${{ matrix.runtime }} --no-restore --no-build
