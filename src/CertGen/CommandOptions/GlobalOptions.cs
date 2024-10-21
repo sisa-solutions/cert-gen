@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Binding;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Sisa.Security;
 
@@ -9,7 +10,7 @@ public record GlobalOptions
 
     public Algorithm Algorithm { get; set; }
 
-    public string[] DnsNames { get; set; } = [];
+    public IReadOnlyCollection<string> DnsNames { get; set; } = [];
     public string? PfxPassword { get; set; }
 
     public string? OrganizationName { get; set; }
@@ -31,7 +32,7 @@ public abstract class GlobalOptionsBinder<TOptions>(
 ) : BinderBase<TOptions>
     where TOptions : GlobalOptions, new()
 {
-    protected override TOptions GetBoundValue(BindingContext bindingContext) =>
+    protected override TOptions GetBoundValue([NotNull] BindingContext bindingContext) =>
         new()
         {
             CertName = bindingContext.ParseResult.GetValueForOption(certName)!,

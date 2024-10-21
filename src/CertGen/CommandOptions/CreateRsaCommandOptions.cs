@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Binding;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Sisa.Security;
 
@@ -27,7 +28,8 @@ public sealed class CreateRsaCommandOptionsBinder(
     commonName
 )
 {
-    protected override CreateRsaCommandOptions GetBoundValue(BindingContext bindingContext) =>
+    protected override CreateRsaCommandOptions GetBoundValue([NotNull
+    ] BindingContext bindingContext) =>
         base.GetBoundValue(bindingContext) with
         {
             KeySize = bindingContext.ParseResult.GetValueForOption(keySize)

@@ -1,12 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Sisa.Security.Helpers;
 
 public static class ExportCertificateHelper
 {
-    private static readonly string OutFolder = "gen";
+    private static string OutFolder { get; } = "gen";
 
-    public static async Task ExportPfxAsync(X509Certificate2 certificate, string filePath, string password)
+    public static async Task ExportPfxAsync([NotNull] X509Certificate2 certificate, string filePath, string password)
     {
         byte[] pfxBytes = certificate.Export(X509ContentType.Pfx, password);
 
@@ -15,28 +17,28 @@ public static class ExportCertificateHelper
         Console.WriteLine("Certificate exported to {0}.", filePath);
     }
 
-    public static async Task ExportCertificatePemAsync(X509Certificate2 certificate, string filePath)
+    public static async Task ExportCertificatePemAsync([NotNull] X509Certificate2 certificate, string filePath)
     {
         await File.WriteAllTextAsync(filePath, certificate.ExportCertificatePem());
 
         Console.WriteLine("Certificate exported to {0}.", filePath);
     }
 
-    public static async Task ExportRsaPrivateKeyPemAsync(X509Certificate2 certificate, string filePath)
+    public static async Task ExportRsaPrivateKeyPemAsync([NotNull] X509Certificate2 certificate, string filePath)
     {
         await File.WriteAllTextAsync(filePath, certificate.GetRSAPrivateKey()!.ExportRSAPrivateKeyPem());
 
         Console.WriteLine("RSA private key exported to {0}.", filePath);
     }
 
-    public static async Task ExportRsaPublicKeyPemAsync(X509Certificate2 certificate, string filePath)
+    public static async Task ExportRsaPublicKeyPemAsync([NotNull] X509Certificate2 certificate, string filePath)
     {
         await File.WriteAllTextAsync(filePath, certificate.GetRSAPublicKey()!.ExportRSAPublicKeyPem());
 
         Console.WriteLine("RSA public key exported to {0}.", filePath);
     }
 
-    public static async Task ExportEcdsaPrivateKeyPemAsync(X509Certificate2 certificate, string filePath)
+    public static async Task ExportEcdsaPrivateKeyPemAsync([NotNull] X509Certificate2 certificate, string filePath)
     {
         await File.WriteAllTextAsync(filePath, certificate.GetECDsaPrivateKey()!.ExportECPrivateKeyPem());
 
@@ -66,7 +68,7 @@ public static class ExportCertificateHelper
         }
     }
 
-    public static string BuildExportFilePath(string fileName)
+    public static string BuildExportFilePath([NotNull] string fileName)
     {
         string currentDirectory = Environment.CurrentDirectory;
 
@@ -76,7 +78,7 @@ public static class ExportCertificateHelper
 
         while (File.Exists(filePath))
         {
-            filePath = Path.Combine(currentDirectory, OutFolder, fileName.Replace(".", $"-{i}."));
+            filePath = Path.Combine(currentDirectory, OutFolder, fileName.Replace(".", $"-{i}.", StringComparison.OrdinalIgnoreCase));
             i++;
         }
 
