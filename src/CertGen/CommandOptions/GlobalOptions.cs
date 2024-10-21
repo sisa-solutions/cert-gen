@@ -24,7 +24,7 @@ public record GlobalOptions
 public abstract class GlobalOptionsBinder<TOptions>(
     Option<string> certName,
     Option<Algorithm> algorithm,
-    Option<string[]> dnsNames,
+    Option<IReadOnlyCollection<string>> dnsNames,
     Option<string?> pfxPassword,
     Option<string?> organizationName,
     Option<string?> organizationUnitName,

@@ -35,7 +35,7 @@ public static class CommandHandler
 
         algorithmOption.AddAlias("-a");
 
-        var dnsNamesOption = new Option<string[]>(
+        var dnsNamesOption = new Option<IReadOnlyCollection<string>>(
             name: "--dns-names",
             description: "DNS names for the certificate",
             getDefaultValue: () => ["localhost"]

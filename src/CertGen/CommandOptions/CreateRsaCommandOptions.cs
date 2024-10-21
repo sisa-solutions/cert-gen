@@ -13,7 +13,7 @@ public sealed class CreateRsaCommandOptionsBinder(
     Option<string> certName,
     Option<Algorithm> algorithm,
     Option<int> keySize,
-    Option<string[]> dnsNames,
+    Option<IReadOnlyCollection<string>> dnsNames,
     Option<string?> pfxPassword,
     Option<string?> organizationName,
     Option<string?> organizationUnitName,
@@ -28,8 +28,7 @@ public sealed class CreateRsaCommandOptionsBinder(
     commonName
 )
 {
-    protected override CreateRsaCommandOptions GetBoundValue([NotNull
-    ] BindingContext bindingContext) =>
+    protected override CreateRsaCommandOptions GetBoundValue([NotNull] BindingContext bindingContext) =>
         base.GetBoundValue(bindingContext) with
         {
             KeySize = bindingContext.ParseResult.GetValueForOption(keySize)
