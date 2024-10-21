@@ -13,7 +13,7 @@ public sealed class CreateEcdsaCommandOptionsBinder(
     Option<string> certName,
     Option<Algorithm> algorithm,
     Option<NamedCurve> namedCurve,
-    Option<string[]> dnsNames,
+    Option<IReadOnlyCollection<string>> dnsNames,
     Option<string?> pfxPassword,
     Option<string?> organizationName,
     Option<string?> organizationUnitName,
