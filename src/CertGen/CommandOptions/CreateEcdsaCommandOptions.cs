@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Binding;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Sisa.Security;
 
@@ -27,7 +28,7 @@ public sealed class CreateEcdsaCommandOptionsBinder(
     commonName
 )
 {
-    protected override CreateEcdsaCommandOptions GetBoundValue(BindingContext bindingContext) =>
+    protected override CreateEcdsaCommandOptions GetBoundValue([NotNull] BindingContext bindingContext) =>
         base.GetBoundValue(bindingContext) with
         {
             NamedCurve = bindingContext.ParseResult.GetValueForOption(namedCurve)

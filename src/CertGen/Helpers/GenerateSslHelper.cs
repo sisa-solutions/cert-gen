@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -13,8 +14,10 @@ public static class GenerateSslHelper
 
             return cert;
         }
-        catch
+        catch(CryptographicException ex)
         {
+            Console.WriteLine(ex.Message);
+
             return null;
         }
     }
@@ -35,7 +38,7 @@ public static class GenerateSslHelper
         return CreateRootCACertificate(certificateRequest);
     }
 
-    public static X509Certificate2 CreateEcdsaSelfSignCertificate(X509Certificate2 issuerCertificate, string subjectName, HashAlgorithmName hashAlgorithm, NamedCurve namedCurve, string[] dnsNames)
+    public static X509Certificate2 CreateEcdsaSelfSignCertificate(X509Certificate2 issuerCertificate, string subjectName, HashAlgorithmName hashAlgorithm, NamedCurve namedCurve, [NotNull] IReadOnlyCollection<string> dnsNames)
     {
         var curve = namedCurve switch
         {
@@ -47,17 +50,17 @@ public static class GenerateSslHelper
         using ECDsa key = ECDsa.Create(curve);
         CertificateRequest certificateRequest = new(subjectName, key, hashAlgorithm);
 
-        var signedCert = CreateSelfSignCertificate(issuerCertificate, certificateRequest, dnsNames);
+        using var signedCert = CreateSelfSignCertificate(issuerCertificate, certificateRequest, dnsNames);
 
         return signedCert.CopyWithPrivateKey(key);
     }
 
-    public static X509Certificate2 CreateRsaSelfSignCertificate(X509Certificate2 issuerCertificate, string subjectName, HashAlgorithmName hashAlgorithm, int keySize, string[] dnsNames)
+    public static X509Certificate2 CreateRsaSelfSignCertificate(X509Certificate2 issuerCertificate, string subjectName, HashAlgorithmName hashAlgorithm, int keySize, [NotNull] IReadOnlyCollection<string> dnsNames)
     {
         using RSA key = RSA.Create(keySize);
         CertificateRequest certificateRequest = new(subjectName, key, hashAlgorithm, RSASignaturePadding.Pkcs1);
 
-        var signedCert = CreateSelfSignCertificate(issuerCertificate, certificateRequest, dnsNames);
+        using var signedCert = CreateSelfSignCertificate(issuerCertificate, certificateRequest, dnsNames);
 
         return signedCert.CopyWithPrivateKey(key);
     }
@@ -95,7 +98,7 @@ public static class GenerateSslHelper
         return certificate;
     }
 
-    private static X509Certificate2 CreateSelfSignCertificate(X509Certificate2 issuerCertificate, CertificateRequest certificateRequest, string[] dnsNames)
+    private static X509Certificate2 CreateSelfSignCertificate(X509Certificate2 issuerCertificate, CertificateRequest certificateRequest, IReadOnlyCollection<string> dnsNames)
     {
         DateTimeOffset currentDate = DateTimeOffset.UtcNow;
 

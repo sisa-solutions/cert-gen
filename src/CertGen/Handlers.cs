@@ -8,8 +8,8 @@ namespace Sisa.Security.Handlers;
 
 public static class CommandHandler
 {
-    private static readonly string RootCAName = "root-ca";
-    private static readonly string RootCACommonName = "Sisa Development Root CA";
+    private static string RootCAName { get; } = "root-ca";
+    private static string RootCACommonName { get; } = "Sisa Development Root CA";
 
     public static Command Initialize()
     {
@@ -197,11 +197,13 @@ public static class CommandHandler
             Console.WriteLine("Root CA exists");
             Console.WriteLine("Loading root CA certificate");
 
+#pragma warning disable CA2000 // Dispose objects before losing scope
             rootCa = GenerateSslHelper.LoadRootCACertificate(rootCaFilePath, rootCaKeyFilePath);
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
             if (rootCa == null)
             {
-                await Console.Error.WriteLineAsync("Failed to load root CA certificate");
+                await Console.Error.WriteLineAsync("Failed to load root CA certificate").ConfigureAwait(false);
 
                 return;
             }
@@ -209,13 +211,15 @@ public static class CommandHandler
         else
         {
             var caSubjectName = GenerateSslHelper.BuildSubjectName(options.OrganizationName!, options.OrganizationUnitName!, RootCACommonName);
+#pragma warning disable CA2000 // Dispose objects before losing scope
             rootCa = GenerateSslHelper.CreateEcdsaRootCACertificate(caSubjectName);
+#pragma warning restore CA2000 // Dispose objects before losing scope
         }
 
         HashAlgorithmName hashAlgorithm = GenerateSslHelper.GetHashAlgorithm(options.Algorithm);
 
         var certSubjectName = GenerateSslHelper.BuildSubjectName(options.OrganizationName!, options.OrganizationUnitName!, options.CommonName!);
-        var cert = GenerateSslHelper.CreateEcdsaSelfSignCertificate(
+        using var cert = GenerateSslHelper.CreateEcdsaSelfSignCertificate(
             rootCa,
             certSubjectName,
             hashAlgorithm,
@@ -267,11 +271,13 @@ public static class CommandHandler
             Console.WriteLine("Root CA exists");
             Console.WriteLine("Loading root CA certificate");
 
+#pragma warning disable CA2000 // Dispose objects before losing scope
             rootCa = GenerateSslHelper.LoadRootCACertificate(rootCaFilePath, rootCaKeyFilePath);
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
             if (rootCa == null)
             {
-                await Console.Error.WriteLineAsync("Failed to load root CA certificate");
+                await Console.Error.WriteLineAsync("Failed to load root CA certificate").ConfigureAwait(false);
 
                 return;
             }
@@ -282,14 +288,16 @@ public static class CommandHandler
             Console.WriteLine("Creating root CA certificate");
 
             var caSubjectName = GenerateSslHelper.BuildSubjectName(options.OrganizationName!, options.OrganizationUnitName!, RootCACommonName);
+#pragma warning disable CA2000 // Dispose objects before losing scope
             rootCa = GenerateSslHelper.CreateRsaRootCACertificate(caSubjectName);
+#pragma warning restore CA2000 // Dispose objects before losing scope
         }
 
         HashAlgorithmName hashAlgorithm = GenerateSslHelper.GetHashAlgorithm(options.Algorithm);
         var certSubjectName = GenerateSslHelper.BuildSubjectName(options.OrganizationName!, options.OrganizationUnitName!, options.CommonName!);
 
         Console.WriteLine("Creating self-signed certificate");
-        var cert = GenerateSslHelper.CreateRsaSelfSignCertificate(
+        using var cert = GenerateSslHelper.CreateRsaSelfSignCertificate(
             rootCa,
             certSubjectName,
             hashAlgorithm,
@@ -300,7 +308,7 @@ public static class CommandHandler
         ExportCertificateHelper.EnsureOutFolderExists();
 
         var keyFileName = $"{options.CertName}-rsa-key.pem";
-        var certFileName = $"{options.CertName}-rsa-key.pem";
+        var certFileName = $"{options.CertName}-rsa-cert.pem";
 
         List<Task> tasks = [];
 
@@ -330,6 +338,6 @@ public static class CommandHandler
             tasks.Add(ExportCertificateHelper.ExportPfxAsync(cert, pfxFilePath, options.PfxPassword));
         }
 
-        await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 }
