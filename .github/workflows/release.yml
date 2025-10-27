@@ -135,7 +135,7 @@ jobs:
           dotnet publish src/CertGen --configuration Release --runtime ${{ matrix.runtime }} --no-restore --no-build --output $ARTIFACTS_DIR
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.ARTIFACTS_DIR }}
           path: ${{ env.ARTIFACTS_DIR }}
